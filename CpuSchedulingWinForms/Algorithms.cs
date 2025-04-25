@@ -340,6 +340,164 @@ namespace CpuSchedulingWinForms
                 MessageBox.Show("Average turnaround time for " + np + " processes: " + averageTurnaroundTime + " sec(s)", "", MessageBoxButtons.OK);
             }
         }
+        
+        // added algorithms by ale valter-franco
+        public static void srtfAlgorithm(string userInput)
+        {
+            int np = Convert.ToInt32(userInput);
+            int[] arrival = new int[np];
+            int[] burst = new int[np];
+            int[] remaining = new int[np];
+            int[] startTime = new int[np];
+            int[] completionTime = new int[np];
+            bool[] isStarted = new bool[np];
+        
+            double totalWT = 0, totalTAT = 0, totalRT = 0;
+            int time = 0, completed = 0;
+        
+            DialogResult result = MessageBox.Show("Shortest Remaining Time First (SRTF) Scheduling", "", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+            if (result == DialogResult.Yes)
+            {
+                for (int i = 0; i < np; i++)
+                {
+                    string at = Microsoft.VisualBasic.Interaction.InputBox($"Enter arrival time for P{i + 1}:", "Arrival Time", "", -1, -1);
+                    arrival[i] = Convert.ToInt32(at);
+                    string bt = Microsoft.VisualBasic.Interaction.InputBox($"Enter burst time for P{i + 1}:", "Burst Time", "", -1, -1);
+                    burst[i] = Convert.ToInt32(bt);
+                    remaining[i] = burst[i];
+                    isStarted[i] = false;
+                }
+        
+                while (completed < np)
+                {
+                    int idx = -1;
+                    int minRemaining = int.MaxValue;
+        
+                    for (int i = 0; i < np; i++)
+                    {
+                        if (arrival[i] <= time && remaining[i] > 0 && remaining[i] < minRemaining)
+                        {
+                            minRemaining = remaining[i];
+                            idx = i;
+                        }
+                    }
+        
+                    if (idx != -1)
+                    {
+                        if (!isStarted[idx])
+                        {
+                            startTime[idx] = time;
+                            isStarted[idx] = true;
+                        }
+        
+                        remaining[idx]--;
+                        time++;
+        
+                        if (remaining[idx] == 0)
+                        {
+                            completionTime[idx] = time;
+                            int tat = completionTime[idx] - arrival[idx];
+                            int wt = tat - burst[idx];
+                            int rt = startTime[idx] - arrival[idx];
+        
+                            MessageBox.Show($"P{idx + 1} - CT: {completionTime[idx]}, WT: {wt}, TAT: {tat}, RT: {rt}");
+        
+                            totalWT += wt;
+                            totalTAT += tat;
+                            totalRT += rt;
+                            completed++;
+                        }
+                    }
+                    else
+                    {
+                        time++;
+                    }
+                }
+        
+                MessageBox.Show($"Average WT = {totalWT / np:F2}\nAverage TAT = {totalTAT / np:F2}\nAverage RT = {totalRT / np:F2}", "SRTF Averages", MessageBoxButtons.OK);
+            }
+        }
+        
+        public static void mlfqAlgorithm(string userInput)
+        {
+            int np = Convert.ToInt32(userInput);
+            int[] arrival = new int[np];
+            int[] burst = new int[np];
+            int[] remaining = new int[np];
+            int[] completion = new int[np];
+            int[] queueLevel = new int[np]; // 0: high, 1: mid, 2: low
+        
+            int[] quantum = { 4, 8, int.MaxValue };
+        
+            DialogResult result = MessageBox.Show("Multi-Level Feedback Queue (MLFQ) Scheduling", "", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+            if (result == DialogResult.Yes)
+            {
+                for (int i = 0; i < np; i++)
+                {
+                    string at = Microsoft.VisualBasic.Interaction.InputBox($"Enter arrival time for P{i + 1}:", "Arrival Time", "", -1, -1);
+                    arrival[i] = Convert.ToInt32(at);
+                    string bt = Microsoft.VisualBasic.Interaction.InputBox($"Enter burst time for P{i + 1}:", "Burst Time", "", -1, -1);
+                    burst[i] = Convert.ToInt32(bt);
+                    remaining[i] = burst[i];
+                    queueLevel[i] = 0;
+                }
+        
+                int time = 0, completed = 0;
+        
+                while (completed < np)
+                {
+                    int idx = -1;
+                    for (int q = 0; q < 3; q++)
+                    {
+                        for (int i = 0; i < np; i++)
+                        {
+                            if (arrival[i] <= time && remaining[i] > 0 && queueLevel[i] == q)
+                            {
+                                idx = i;
+                                break;
+                            }
+                        }
+                        if (idx != -1) break;
+                    }
+        
+                    if (idx == -1)
+                    {
+                        time++;
+                        continue;
+                    }
+        
+                    int execTime = Math.Min(remaining[idx], quantum[queueLevel[idx]]);
+                    remaining[idx] -= execTime;
+                    time += execTime;
+        
+                    if (remaining[idx] == 0)
+                    {
+                        completion[idx] = time;
+                        int tat = completion[idx] - arrival[idx];
+                        int wt = tat - burst[idx];
+        
+                        MessageBox.Show($"P{idx + 1} - CT: {completion[idx]}, WT: {wt}, TAT: {tat}");
+        
+                        completed++;
+                    }
+                    else
+                    {
+                        queueLevel[idx] = Math.Min(queueLevel[idx] + 1, 2);
+                    }
+                }
+        
+                double avgWT = 0, avgTAT = 0;
+                for (int i = 0; i < np; i++)
+                {
+                    int tat = completion[i] - arrival[i];
+                    int wt = tat - burst[i];
+                    avgWT += wt;
+                    avgTAT += tat;
+                }
+        
+                MessageBox.Show($"Average WT = {avgWT / np:F2}\nAverage TAT = {avgTAT / np:F2}", "MLFQ Averages", MessageBoxButtons.OK);
+            }
+        }
     }
 }
 
