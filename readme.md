@@ -10,3 +10,8 @@ Please install the font: "IDAutomationHC39M Free Version". You can find it in th
 
 ## License
 This project is licensed under the terms of the [MIT license](https://choosealicense.com/licenses/mit/).
+
+Changes made by Alessandra Valter-Franco
+- added the shortest remaining time first algorithm
+- added the multi-level feedback queue
+- added working buttons to the actual cpu form
